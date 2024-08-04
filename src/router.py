@@ -25,7 +25,10 @@ async def start_command_router(message: Message) -> None:
 
 
 @router.callback_query(F.data == "all_messages")
-async def all_messages_route(callback: CallbackQuery) -> None:
+async def all_messages_route(
+        callback: CallbackQuery,
+        service: Service
+) -> None:
     """
     Route for get all messages.
     """
@@ -33,7 +36,7 @@ async def all_messages_route(callback: CallbackQuery) -> None:
     await callback.message.delete_reply_markup()
 
     try:
-        messages = await Service.get_all_messages()
+        messages = await service.get_all_messages()
     except RequestError as e:
         await callback.message.answer(str(e))
     else:
@@ -64,10 +67,14 @@ async def get_message_route(
 
 
 @router.message(AddMessageState.message)
-async def add_message_router(message: Message, state: FSMContext) -> None:
+async def add_message_router(
+        message: Message,
+        state: FSMContext,
+        service: Service
+) -> None:
     """Route for send message to server"""
     try:
-        await Service.send_message(
+        await service.send_message(
             user_id=str(message.from_user.id),
             username=message.from_user.username,
             text=message.text

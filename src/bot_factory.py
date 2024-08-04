@@ -4,11 +4,14 @@ from aiogram.client.bot import DefaultBotProperties
 
 from .configs.schemas import BotConfig
 from .router import router
+from .builder import build_service
 
 
 async def start_bot(bot_config: BotConfig) -> None:
     """Function for configure and start telegram bot"""
-    dp = Dispatcher()
+    dp = Dispatcher(
+        service=build_service(),
+    )
     dp.include_router(router)
 
     bot = Bot(
