@@ -5,6 +5,8 @@ from aiogram.fsm.context import FSMContext
 
 from .buttons import main_buttons
 from .state import AddMessageState
+from .service import Service
+from .exceptions import RequestError
 
 
 router = Router()
@@ -30,7 +32,18 @@ async def all_messages_route(callback: CallbackQuery) -> None:
     await callback.answer()
     await callback.message.delete_reply_markup()
 
-    await callback.message.answer("Ваши сообщения:")
+    try:
+        messages = await Service.get_all_messages()
+    except RequestError as e:
+        await callback.message.answer(str(e))
+    else:
+        await callback.message.answer("Ваши сообщения:")
+        for message in messages:
+            await callback.message.answer(
+                f"<b>{message['username']}</b>:\n"
+                f"{message['text']}\n"
+            )
+
     await callback.message.answer(
         "Что пожелаете сотворить?",
         reply_markup=main_buttons(),
@@ -53,7 +66,17 @@ async def get_message_route(
 @router.message(AddMessageState.message)
 async def add_message_router(message: Message, state: FSMContext) -> None:
     """Route for send message to server"""
-    await message.answer("Ваше сообщение отправлено")
+    try:
+        await Service.send_message(
+            user_id=str(message.from_user.id),
+            username=message.from_user.username,
+            text=message.text
+        )
+    except RequestError as e:
+        await message.answer(str(e))
+    else:
+        await message.answer("Ваше сообщение отправлено")
+
     await message.answer(
         "Что пожелаете сотворить?",
         reply_markup=main_buttons(),
